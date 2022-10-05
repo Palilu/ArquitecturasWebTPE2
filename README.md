@@ -12,3 +12,4 @@ Para esta entrega también usamos Spring Boot, JUnit y AssertJ para los tests
 3. Compilarlo: 'mvn clean install'
 4. Para testear el proyecto se puede correr 'mvn test' o alternativamente se puede importar el proyecto y correr el test case que se encuentra en '/src/test/java/edu/tudai/arquitecturaswebtpe2/TrabajoEspecialTest'
 5. La solución se encuentra en '/src/main/java/edu/tudai/arquitecturaswebtpe2/*'
+6. Una imagen del DER se encuentra en 'src/main/resources/DiagramaEntidadRelacion.png', también en el root de Java DerDiagram.svg es la versión editable del mismo, hace falta el plugin Diagrams.net de intelliJ para verlo en ese formato.
