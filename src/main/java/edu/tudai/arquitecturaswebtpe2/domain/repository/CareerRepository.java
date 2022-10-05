@@ -24,9 +24,9 @@ public interface CareerRepository extends JpaRepository<Career, Long> {
     /**
      * f) recuperar las carreras con estudiantes inscriptos, y ordenar por cantidad de inscriptos.
      */
-    @Query(" SELECT new edu.tudai.arquitecturaswebtpe2.domain.dto.CareerCount(c.id, c.name, count(i) as iCount) " +
+    @Query(" SELECT new edu.tudai.arquitecturaswebtpe2.domain.dto.CareerCount(c.id, c.name, count(i)) " +
            " FROM Career c JOIN c.inscriptions i " +
-           " GROUP BY c.id ORDER BY iCount DESC")
+           " GROUP BY c.id, c.name ORDER BY count(i) DESC")
     List<CareerCount> getCareersByInscriptions();
 
     /**
@@ -37,12 +37,12 @@ public interface CareerRepository extends JpaRepository<Career, Long> {
     @Query(" SELECT new edu.tudai.arquitecturaswebtpe2.domain.dto.CareerReportRow(" +
            "     c.id, " +
            "     c.name, " +
-           "     YEAR(i.since) as year, " +
+           "     YEAR(i.since), " +
            "     SUM(CASE WHEN(i.status = 'INSCRIPTED') THEN 1 ELSE 0 END), " +
            "     SUM(CASE WHEN(i.status = 'FINISHED') THEN 1 ELSE 0 END)" +
            " )" +
            " FROM Career c JOIN c.inscriptions i " +
-           " GROUP BY c.id, c.name, year ORDER BY c.name, year")
+           " GROUP BY c.id, c.name, YEAR(i.since) ORDER BY c.name, YEAR(i.since)")
     List<CareerReportRow> getCareersReport();
 }
 

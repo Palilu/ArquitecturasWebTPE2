@@ -6,6 +6,7 @@ import edu.tudai.arquitecturaswebtpe2.domain.entity.*;
 import edu.tudai.arquitecturaswebtpe2.domain.repository.CareerRepository;
 import edu.tudai.arquitecturaswebtpe2.domain.repository.InscriptionRepository;
 import edu.tudai.arquitecturaswebtpe2.domain.repository.StudentRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +16,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author
@@ -45,8 +48,7 @@ import java.util.Optional;
  * los años de manera cronológica.
  * Nota: las consultas deben ser resueltas mayormente en JPQL, y no en código Java.
  */
-@SpringBootTest
-public class TrabajoEspecialTest {
+public class TrabajoEspecialTest extends ArquitecturasWebTpe2ApplicationTests {
 
     @Autowired
     private StudentRepository studentRepository;
@@ -57,14 +59,26 @@ public class TrabajoEspecialTest {
     @Autowired
     private InscriptionRepository inscriptionRepository;
 
+    @BeforeEach
+    public void cleanUp() {
+        inscriptionRepository.deleteAll();
+        careerRepository.deleteAll();
+        studentRepository.deleteAll();
+    }
+
     /**
      * Prueba el requerimiento: 2.a. dar de alta un estudiante
      */
     @Test
     public void createStudent() {
+        System.out.println("2.a. Dar de alta un estudiante");
         this.createBestStudents();
         List<Student> students = studentRepository.findAll();
-        students.forEach(System.out::println);
+        assertThat(students.size()).isEqualTo(3);
+        assertThat(students.get(0).getGivenNames()).isEqualTo("Guillermina");
+        assertThat(students.get(1).getGivenNames()).isEqualTo("Pablo");
+        assertThat(students.get(2).getGivenNames()).isEqualTo("Ricardo");
+        System.out.println("2.a. Estudiante dado de alta satisfactoriamente");
     }
 
     /**
@@ -72,6 +86,7 @@ public class TrabajoEspecialTest {
      */
     @Test
     public void createInscription() {
+        System.out.println("2.b. Matriculando un estudiante en una carrera");
         Student cosme = studentRepository.save(Student.builder()
                 .givenNames("Cosme")
                 .lastName("Fulanito")
@@ -81,16 +96,22 @@ public class TrabajoEspecialTest {
                 .gender(Gender.MALE)
                 .dni("1")
                 .build());
+        System.out.println("2.b. Creado cosme");
         Career teclismo = careerRepository.save(Career.builder()
                 .name("Teclismo")
                 .build());
+        System.out.println("2.b. Creado teclismo");
         Inscription inscriptionCosmeTeclismo = inscriptionRepository.save(Inscription.builder()
                 .student(cosme)
                 .career(teclismo)
                 .since(LocalDateTime.now())
                 .status(InscriptionStatus.INSCRIPTED)
                 .build());
-        System.out.println(inscriptionCosmeTeclismo);
+        assertThat(inscriptionCosmeTeclismo.getId()).isNotNull();
+        assertThat(inscriptionCosmeTeclismo.getStudent()).isEqualTo(cosme);
+        assertThat(inscriptionCosmeTeclismo.getCareer()).isEqualTo(teclismo);
+        System.out.println("2.b. Cosme inscripto al teclismo");
+
     }
 
     /**
@@ -98,11 +119,21 @@ public class TrabajoEspecialTest {
      */
     @Test
     public void findStudentsSorted() {
+        System.out.println("2.c. Recuperando todos los estudiantes, y especificar algún criterio de ordenamiento simple.");
         this.createBestStudents();
+        System.out.println("2.c. Estudiantes ordenados por ciudad asc:");
         List<Student> studentsByCityAsc = studentRepository.findAll(Sort.by(Sort.Direction.ASC, "city"));
-        studentsByCityAsc.forEach(System.out::println);
+        assertThat(studentsByCityAsc.size()).isEqualTo(3);
+        assertThat(studentsByCityAsc.get(0).getCity()).isEqualTo("Ayacucho");
+        assertThat(studentsByCityAsc.get(1).getCity()).isEqualTo("Sierras Bayas");
+        assertThat(studentsByCityAsc.get(2).getCity()).isEqualTo("Tandil");
+        System.out.println("2.c. Estudiantes ordenados por nombres desc:");
         List<Student> studentsByNameDesc = studentRepository.findAll(Sort.by(Sort.Direction.DESC, "givenNames"));
-        studentsByNameDesc.forEach(System.out::println);
+        assertThat(studentsByNameDesc.size()).isEqualTo(3);
+        assertThat(studentsByNameDesc.get(0).getGivenNames()).isEqualTo("Ricardo");
+        assertThat(studentsByNameDesc.get(1).getGivenNames()).isEqualTo("Pablo");
+        assertThat(studentsByNameDesc.get(2).getGivenNames()).isEqualTo("Guillermina");
+        System.out.println("2.c. Estudiantes ordenados.");
     }
 
     /**
@@ -110,6 +141,7 @@ public class TrabajoEspecialTest {
      */
     @Test
     public void findStudentByStudentId() {
+        System.out.println("2.d. recuperando un estudiante, en base a su número de libreta universitaria.");
         Student cosme = studentRepository.save(Student.builder()
                 .givenNames("Cosme")
                 .lastName("Fulanito")
@@ -119,9 +151,13 @@ public class TrabajoEspecialTest {
                 .gender(Gender.MALE)
                 .dni("1")
                 .build());
-
         Optional<Student> result = studentRepository.findByStudentId(4L);
-        System.out.println(result);
+        assertThat(result).isNotEmpty();
+        assertThat(result.get())
+                .usingRecursiveComparison()
+                .ignoringFields("inscriptions")
+                .isEqualTo(cosme);
+        System.out.println("2.d. Estudiante recuperado en base a su número de libreta universitaria.");
     }
 
     /**
@@ -129,14 +165,15 @@ public class TrabajoEspecialTest {
      */
     @Test
     public void findStudentsByGender() {
+        System.out.println("2.e. Recuperando un estudiante, en base a su número de libreta universitaria.");
         this.createBestStudents();
-
         List<Student> males = studentRepository.findByGender(Gender.MALE);
         List<Student> females = studentRepository.findByGender(Gender.FEMALE);
         List<Student> other = studentRepository.findByGender(Gender.OTHER);
-        System.out.println("Males: " + males);
-        System.out.println("Females: " + females);
-        System.out.println("Other: " + other);
+        assertThat(males.get(0).getGender()).isEqualTo(Gender.MALE);
+        assertThat(females.get(0).getGender()).isEqualTo(Gender.FEMALE);
+        assertThat(other.get(0).getGender()).isEqualTo(Gender.OTHER);
+        System.out.println("2.e. Estudiante recuperado en base a su número de libreta universitaria.");
     }
 
     /**
@@ -144,6 +181,7 @@ public class TrabajoEspecialTest {
      */
     @Test
     public void findCareersByInscriptions() {
+        System.out.println("2.f. Recuperando las carreras con estudiantes inscriptos, y ordenar por cantidad de inscriptos.");
         Student guille = studentRepository.save(Student.builder()
                 .givenNames("Guillermina")
                 .lastName("Lauge")
@@ -218,7 +256,11 @@ public class TrabajoEspecialTest {
                 .build());
 
         List<CareerCount> careerCounts = careerRepository.getCareersByInscriptions();
-        careerCounts.forEach(System.out::println);
+        assertThat(careerCounts.size()).isEqualTo(3);
+        assertThat(careerCounts.get(0).getCareerName()).isEqualTo("TUDAI");
+        assertThat(careerCounts.get(1).getCareerName()).isEqualTo("Ingeniería de Sistemas");
+        assertThat(careerCounts.get(2).getCareerName()).isEqualTo("Filosofía y Letras");
+        System.out.println("2.f. Recuperadas las carreras con estudiantes inscriptos, y ordenar por cantidad de inscriptos.");
     }
 
     /**
@@ -226,6 +268,7 @@ public class TrabajoEspecialTest {
      */
     @Test
     public void findStudentsByCareerAndCity() {
+        System.out.println("2.g. Recuperando las carreras con estudiantes inscriptos, y ordenar por cantidad de inscriptos.");
         Student guille = studentRepository.save(Student.builder()
                 .givenNames("Guillermina")
                 .lastName("Lauge")
@@ -279,7 +322,9 @@ public class TrabajoEspecialTest {
                 .build());
 
         List<Student> philosophersOfTandil = studentRepository.findByCityAndCareer(fyl, "Tandil");
-        philosophersOfTandil.forEach(System.out::println);
+        assertThat(philosophersOfTandil.size()).isEqualTo(1);
+        assertThat(philosophersOfTandil.get(0).getGivenNames()).isEqualTo("Guillermina");
+        System.out.println("2.g. Recuperadas las carreras con estudiantes inscriptos, y ordenar por cantidad de inscriptos.");
     }
 
     /**
@@ -291,6 +336,7 @@ public class TrabajoEspecialTest {
      */
     @Test
     public void getCareersReport() {
+        System.out.println("3. Generar un reporte de las carreras.");
         Student guille = studentRepository.save(Student.builder()
                 .givenNames("Guillermina")
                 .lastName("Lauge")
@@ -334,17 +380,26 @@ public class TrabajoEspecialTest {
                 .student(pali)
                 .career(ids)
                 .since(LocalDateTime.now())
-                .status(InscriptionStatus.ABANDONED)
+                .status(InscriptionStatus.INSCRIPTED)
                 .build());
         inscriptionRepository.save(Inscription.builder()
                 .student(richard)
                 .career(ids)
                 .since(LocalDateTime.now())
-                .status(InscriptionStatus.ABANDONED)
+                .status(InscriptionStatus.INSCRIPTED)
                 .build());
 
         List<CareerReportRow> careerReport = careerRepository.getCareersReport();
-        careerReport.forEach(System.out::println);
+        assertThat(careerReport.size()).isEqualTo(2);
+        assertThat(careerReport.get(0).getCareerName()).isEqualTo("Filosofía y Letras");
+        assertThat(careerReport.get(0).getYear()).isEqualTo(2022);
+        assertThat(careerReport.get(0).getGraduated()).isEqualTo(1);
+        assertThat(careerReport.get(0).getInscripted()).isEqualTo(0);
+        assertThat(careerReport.get(1).getCareerName()).isEqualTo("Ingeniería de Sistemas");
+        assertThat(careerReport.get(1).getYear()).isEqualTo(2022);
+        assertThat(careerReport.get(1).getGraduated()).isEqualTo(0);
+        assertThat(careerReport.get(1).getInscripted()).isEqualTo(2);
+        System.out.println("3. Reporte de las carreras generado.");
     }
 
     private void createBestStudents() {

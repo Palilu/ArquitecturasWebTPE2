@@ -22,6 +22,7 @@ import java.util.List;
 @AllArgsConstructor
 @ToString(of = {"id", "givenNames", "lastName"})
 @Builder
+@EqualsAndHashCode
 public class Student implements Serializable {
 
     @Id
